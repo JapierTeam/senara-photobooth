@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react'
 import { FRAMES, assetUrl } from '../frames'
 import { composeFrame } from '../lib/compose'
 import { DATE_LOCALE, LangToggle, useI18n } from '../lib/i18n'
+import { playPop, unlockAudio } from '../lib/sound'
 
 interface Props {
   selected: string
@@ -41,7 +42,11 @@ export default function Home({ selected, onSelect, onStart }: Props) {
           <button
             key={f.id}
             className={`frame-card ${f.id === selected ? 'is-selected' : ''}`}
-            onClick={() => onSelect(f.id)}
+            onClick={() => {
+              unlockAudio()
+              playPop()
+              onSelect(f.id)
+            }}
           >
             <div className="frame-thumb">{thumbs[f.id] ? <img src={thumbs[f.id]} alt="" /> : <span className="spinner" />}</div>
             <strong>{t(`frame.${f.id}` as 'frame.strip4')}</strong>
@@ -50,7 +55,13 @@ export default function Home({ selected, onSelect, onStart }: Props) {
         ))}
       </div>
 
-      <button className="btn btn-primary btn-xl" onClick={onStart}>
+      <button
+        className="btn btn-primary btn-xl btn-breathe"
+        onClick={() => {
+          unlockAudio()
+          onStart()
+        }}
+      >
         {t('home.start')}
       </button>
 

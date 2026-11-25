@@ -5,7 +5,8 @@ import { composeFrame } from '../lib/compose'
 import { EFFECTS, applyEffect, type EffectId } from '../lib/effects'
 import { useHandTrigger } from '../lib/gesture'
 import EffectPicker from './EffectPicker'
-import { DATE_LOCALE, useI18n } from '../lib/i18n'
+import { DATE_LOCALE, POSE_KEYS, useI18n } from '../lib/i18n'
+import { isMuted, playPop, playShutter, playTick, setMuted, unlockAudio } from '../lib/sound'
 
 const COUNTDOWN = 3
 const BETWEEN_SHOTS_MS = 2000
@@ -37,11 +38,45 @@ export default function Shoot({ frame, effect, seed, onEffect, onCancel, onDone 
   const [gestureOn, setGestureOn] = useState(() => localStorage.getItem(GESTURE_KEY) !== 'off')
   const [lastActivity, setLastActivity] = useState(() => Date.now())
   const cancelled = useRef(false)
+  const [pose, setPose] = useState<(typeof POSE_KEYS)[number]>(POSE_KEYS[0])
+  const [muted, setMutedState] = useState(isMuted)
+  const viewfinderRef = useRef<HTMLDivElement>(null)
+  const miniRef = useRef<HTMLDivElement>(null)
+
+  /** Thumbnail flies from the viewfinder into the frame preview on the right. */
+  const flyToPreview = (shot: HTMLCanvasElement) => {
+    const from = viewfinderRef.current?.getBoundingClientRect()
+    const to = miniRef.current?.getBoundingClientRect()
+    if (!from || !to || !to.width || matchMedia('(prefers-reduced-motion: reduce)').matches) return
+    const img = document.createElement('img')
+    const thumb = document.createElement('canvas')
+    thumb.width = 320
+    thumb.height = Math.round((320 * shot.height) / shot.width)
+    thumb.getContext('2d')!.drawImage(shot, 0, 0, thumb.width, thumb.height)
+    img.src = thumb.toDataURL('image/jpeg', 0.7)
+    img.className = 'fly-shot'
+    Object.assign(img.style, { left: `${from.left}px`, top: `${from.top}px`, width: `${from.width}px`, height: `${from.height}px` })
+    document.body.appendChild(img)
+    const dx = to.left + to.width / 2 - (from.left + from.width / 2)
+    const dy = to.top + to.height / 2 - (from.top + from.height / 2)
+    const s = Math.min(to.width / from.width, 0.35)
+    img
+      .animate(
+        [
+          { transform: 'translate(0,0) scale(1) rotate(0deg)', opacity: 1 },
+          { transform: `translate(${dx * 0.4}px, ${dy * 0.4 - 60}px) scale(${(1 + s) / 2}) rotate(-6deg)`, opacity: 1, offset: 0.45 },
+          { transform: `translate(${dx}px, ${dy}px) scale(${s}) rotate(4deg)`, opacity: 0 },
+        ],
+        { duration: 750, easing: 'cubic-bezier(.5,0,.3,1)' },
+      )
+      .finished.finally(() => img.remove())
+  }
 
   const bump = () => setLastActivity(Date.now())
 
   const start = useCallback(async () => {
     if (!ready || phase !== 'ready') return
+    unlockAudio()
     setPhase('shooting')
     cancelled.current = false
     const shots: HTMLCanvasElement[] = []
@@ -49,17 +84,21 @@ export default function Shoot({ frame, effect, seed, onEffect, onCancel, onDone 
       for (let n = COUNTDOWN; n > 0; n--) {
         if (cancelled.current) return
         setCount(n)
+        playTick(n === 1)
         await wait(1000)
       }
       if (cancelled.current) return
       setCount(null)
       const c = capture(true)
       shots.push(c)
-      setPhotos([...shots])
+      playShutter()
       setFlash(true)
+      flyToPreview(c)
+      setTimeout(() => setPhotos([...shots]), 550)
       await wait(350)
       setFlash(false)
       if (i < frame.shots - 1) {
+        setPose(POSE_KEYS[Math.floor(Math.random() * POSE_KEYS.length)])
         setBetween(true)
         await wait(BETWEEN_SHOTS_MS)
         setBetween(false)
@@ -168,7 +207,7 @@ export default function Shoot({ frame, effect, seed, onEffect, onCancel, onDone 
 
       {/* center: camera */}
       <section className="shoot-center">
-        <div className="viewfinder" style={{ ['--ar' as string]: slot.w / slot.h }}>
+        <div ref={viewfinderRef} className={`viewfinder ${count !== null ? 'is-counting' : ''}`} style={{ ['--ar' as string]: slot.w / slot.h }}>
           <video
             ref={videoRef}
             playsInline
@@ -176,8 +215,18 @@ export default function Shoot({ frame, effect, seed, onEffect, onCancel, onDone 
             className="video"
             style={{ filter: EFFECTS.find((e) => e.id === effect)?.css }}
           />
-          {count !== null && <div className="countdown" key={`${photos.length}-${count}`}>{count}</div>}
-          {between && <div className="between-msg">{t('shoot.next', { n: photos.length + 1 })}</div>}
+          {count !== null && (
+            <div className={`countdown ${count === 1 ? 'is-last' : ''}`} key={`${photos.length}-${count}`}>
+              <span className="countdown-ring" />
+              {count}
+            </div>
+          )}
+          {between && (
+            <div className="between-msg">
+              <b>{t(pose)}</b>
+              <small>{t('shoot.next', { n: photos.length + 1 })}</small>
+            </div>
+          )}
           {!shooting && ready && (
             <div className="ready-msg">
               {progress > 0 ? t('shoot.hold') : gestureOn && gestureStatus === 'ready' ? t('shoot.readyGesture') : t('shoot.readyButton')}
@@ -196,7 +245,7 @@ export default function Shoot({ frame, effect, seed, onEffect, onCancel, onDone 
       {/* right: frame preview */}
       <aside className="shoot-side shoot-preview">
         <h2>{t(`frame.${frame.id}` as 'frame.strip4')}</h2>
-        <div className="mini-frame">{framePreview && <img src={framePreview} alt="" />}</div>
+        <div className="mini-frame" ref={miniRef}>{framePreview && <img src={framePreview} alt="" />}</div>
         <p className="shot-count">
           {t('shoot.photoCount')} <b>{Math.min(photos.length + (shooting ? 1 : 0), frame.shots) || 0}</b> / {frame.shots}
         </p>
@@ -210,11 +259,23 @@ export default function Shoot({ frame, effect, seed, onEffect, onCancel, onDone 
             value={effect}
             onChange={(id) => {
               bump()
+              unlockAudio()
+              playPop()
               onEffect(id)
             }}
             dark
           />
         </div>
+        <button
+          className="sound-toggle"
+          aria-label={muted ? 'Unmute' : 'Mute'}
+          onClick={() => {
+            setMuted(!muted)
+            setMutedState(!muted)
+          }}
+        >
+          {muted ? '🔇' : '🔊'}
+        </button>
         <button
           className="shutter"
           aria-label={t('shoot.shutter')}

@@ -37,6 +37,12 @@ const en = {
   'shoot.photoCount': 'Photo',
   'shoot.cancel': 'Cancel',
   'shoot.shutter': 'Take photo',
+  'pose.1': 'Air guitar! 🎸',
+  'pose.2': 'Big smile! 😁',
+  'pose.3': 'Silly face! 🤪',
+  'pose.4': 'Strike a rockstar pose! 🤘',
+  'pose.5': 'Squeeze in closer! 🫶',
+  'pose.6': 'Sing it out loud! 🎤',
   // effects
   'effects.label': 'Photo effects',
   'effects.title': 'Choose an effect',
@@ -101,6 +107,12 @@ const id: Record<Key, string> = {
   'shoot.photoCount': 'Foto',
   'shoot.cancel': 'Batal',
   'shoot.shutter': 'Ambil foto',
+  'pose.1': 'Gaya main gitar! 🎸',
+  'pose.2': 'Senyum lebar! 😁',
+  'pose.3': 'Muka konyol! 🤪',
+  'pose.4': 'Pose rockstar! 🤘',
+  'pose.5': 'Merapat lagi! 🫶',
+  'pose.6': 'Gaya nyanyi! 🎤',
   'effects.label': 'Efek foto',
   'effects.title': 'Pilih efek',
   'result.composing': 'Menyusun foto…',
@@ -131,6 +143,8 @@ const id: Record<Key, string> = {
 }
 
 const DICT: Record<Lang, Record<Key, string>> = { en, id }
+
+export const POSE_KEYS = ['pose.1', 'pose.2', 'pose.3', 'pose.4', 'pose.5', 'pose.6'] as const
 
 /** Locale used for dates printed on the frames. */
 export const DATE_LOCALE: Record<Lang, string> = { en: 'en-GB', id: 'id-ID' }

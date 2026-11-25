@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react'
 import { assetUrl } from '../frames'
 import { blobUrlFromPath } from '../lib/upload'
 import { LangToggle, useI18n } from '../lib/i18n'
+import Confetti from './Confetti'
 
 const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent) || (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1)
 
@@ -58,6 +59,7 @@ export default function DownloadPage() {
 
   return (
     <main className="download">
+      <Confetti burst={saved ? 1 : 0} count={14} />
       <LangToggle className="lang-corner" />
       <header className="brand brand-sm">
         <img src={assetUrl('logo-app')} alt="" className="brand-logo" />
@@ -75,7 +77,7 @@ export default function DownloadPage() {
 
       {state !== 'missing' && (
         <>
-          <div className="dl-photo">
+          <div className={`dl-photo ${state === 'ready' ? 'is-ready' : ''}`}>
             {blobUrl && <img src={blobUrl} alt={t('dl.alt')} />}
           </div>
           <div className="dl-actions">
@@ -95,7 +97,11 @@ export default function DownloadPage() {
           <p className="dl-hint">
             {isIOS ? t('dl.hintIos') : t('dl.hintAndroid')}
           </p>
-          {saved && <p className="dl-saved">{t('dl.saved')}</p>}
+          {saved && (
+            <p className="dl-saved">
+              <span className="check" aria-hidden>✓</span> {t('dl.saved')}
+            </p>
+          )}
         </>
       )}
     </main>

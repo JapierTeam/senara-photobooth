@@ -5,6 +5,8 @@ import { canvasToJpeg, composeFrame } from '../lib/compose'
 import { uploadPhoto } from '../lib/upload'
 import { applyEffect, type EffectId } from '../lib/effects'
 import EffectPicker from './EffectPicker'
+import Confetti from './Confetti'
+import { playPop, playSuccess } from '../lib/sound'
 import { DATE_LOCALE, useI18n } from '../lib/i18n'
 
 const AUTO_RESET_S = 120
@@ -27,6 +29,7 @@ export default function Result({ frame, photos, effect, seed, onEffect, onRetake
   const [preview, setPreview] = useState<string | null>(null)
   const [up, setUp] = useState<UploadState>({ s: 'idle' })
   const [left, setLeft] = useState(AUTO_RESET_S)
+  const [burst, setBurst] = useState(0)
   // bumps on every recompose so a late upload of an old version is ignored
   const version = useRef(0)
 
@@ -53,6 +56,11 @@ export default function Result({ frame, photos, effect, seed, onEffect, onRetake
         url = URL.createObjectURL(b)
         setJpeg(b)
         setPreview(url)
+        // celebrate the first time the photo appears
+        setBurst((b) => {
+          if (b === 0) playSuccess()
+          return b || 1
+        })
       })
     return () => {
       alive = false
@@ -64,7 +72,11 @@ export default function Result({ frame, photos, effect, seed, onEffect, onRetake
     const v = version.current
     setUp({ s: 'uploading' })
     uploadPhoto(b)
-      .then((r) => v === version.current && setUp({ s: 'done', url: r.shareUrl }))
+      .then((r) => {
+        if (v !== version.current) return
+        setUp({ s: 'done', url: r.shareUrl })
+        playPop()
+      })
       .catch((e: Error) =>
         v === version.current &&
         setUp({
@@ -89,6 +101,7 @@ export default function Result({ frame, photos, effect, seed, onEffect, onRetake
   return (
     <main className="result" onPointerDown={() => setLeft(AUTO_RESET_S)}>
       <section className="result-photo">
+        <Confetti burst={burst} />
         {preview ? (
           <img src={preview} alt={t('result.alt')} className={frame.h > frame.w * 2 ? 'is-strip' : ''} />
         ) : (
@@ -98,10 +111,15 @@ export default function Result({ frame, photos, effect, seed, onEffect, onRetake
 
       <aside className="result-panel">
         <h2>{t('effects.title')}</h2>
-        <EffectPicker value={effect} onChange={onEffect} sample={sample} />
+        <EffectPicker value={effect} onChange={(id) => {
+            playPop()
+            onEffect(id)
+          }} sample={sample} />
         <div className="qr-box">
           {up.s === 'done' ? (
-            <QRCodeSVG value={up.url} size={210} level="M" marginSize={2} />
+            <div className="qr-reveal">
+              <QRCodeSVG value={up.url} size={210} level="M" marginSize={2} />
+            </div>
           ) : up.s === 'error' ? (
             <div className="qr-placeholder error">
               {t('result.uploadFailed')}
@@ -131,7 +149,10 @@ export default function Result({ frame, photos, effect, seed, onEffect, onRetake
           <button className="btn btn-ghost" onClick={onRetake}>{t('result.retake')}</button>
           <button className="btn btn-primary" onClick={onFinish}>{t('result.done')}</button>
         </div>
-        <p className="auto-reset">{t('result.autoReset', { n: left })}</p>
+        <div className="auto-reset">
+          <span className="auto-reset-bar" style={{ transform: `scaleX(${left / AUTO_RESET_S})` }} />
+          <p>{t('result.autoReset', { n: left })}</p>
+        </div>
       </aside>
     </main>
   )
