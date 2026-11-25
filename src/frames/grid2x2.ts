@@ -32,7 +32,6 @@ export const grid2x2: FrameDef = {
   ],
   texts: [
     { text: 'SENARA', x: 560, y: footer + 250, size: 104, weight: 800, color: COLORS.navy, align: 'center', letterSpacing: 6 },
-    { text: 'PHOTOBOOTH', x: 560, y: footer + 315, size: 38, weight: 700, color: COLORS.purple, align: 'center', letterSpacing: 10 },
-    { text: '{date}', x: 560, y: footer + 385, size: 34, weight: 500, color: COLORS.navy, align: 'center' },
+    { text: '{date}', x: 560, y: footer + 320, size: 34, weight: 500, color: COLORS.navy, align: 'center' },
   ],
 }

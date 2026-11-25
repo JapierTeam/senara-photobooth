@@ -29,7 +29,6 @@ export const strip3: FrameDef = {
   ],
   texts: [
     { text: 'SENARA', x: 860, y: footer + 440, size: 120, weight: 800, color: COLORS.navy, align: 'center', letterSpacing: 6 },
-    { text: 'PHOTOBOOTH', x: 860, y: footer + 510, size: 44, weight: 700, color: COLORS.purple, align: 'center', letterSpacing: 10 },
-    { text: '{date}', x: 860, y: footer + 600, size: 40, weight: 500, color: COLORS.navy, align: 'center' },
+    { text: '{date}', x: 860, y: footer + 520, size: 40, weight: 500, color: COLORS.navy, align: 'center' },
   ],
 }

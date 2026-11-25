@@ -35,7 +35,6 @@ export const strip4: FrameDef = {
   ],
   texts: [
     { text: 'SENARA', x: 850, y: footer + 430, size: 120, weight: 800, color: COLORS.navy, align: 'center', letterSpacing: 6 },
-    { text: 'PHOTOBOOTH', x: 850, y: footer + 500, size: 44, weight: 700, color: COLORS.purple, align: 'center', letterSpacing: 10 },
-    { text: '{date}', x: 850, y: footer + 590, size: 40, weight: 500, color: COLORS.navy, align: 'center' },
+    { text: '{date}', x: 850, y: footer + 510, size: 40, weight: 500, color: COLORS.navy, align: 'center' },
   ],
 }
