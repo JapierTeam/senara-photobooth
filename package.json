@@ -11,6 +11,7 @@
     "typecheck": "tsc -b"
   },
   "dependencies": {
+    "@mediapipe/tasks-vision": "^1.2.3",
     "@vercel/blob": "^2.9.0",
     "nanoid": "^6.0.2",
     "qrcode.react": "^4.2.0",

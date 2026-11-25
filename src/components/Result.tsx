@@ -14,18 +14,17 @@ interface Props {
   frame: FrameDef
   photos: HTMLCanvasElement[]
   effect: EffectId
+  seed: number
   onEffect: (id: EffectId) => void
   onRetake: () => void
   onFinish: () => void
 }
 
-export default function Result({ frame, photos, effect, onEffect, onRetake, onFinish }: Props) {
+export default function Result({ frame, photos, effect, seed, onEffect, onRetake, onFinish }: Props) {
   const [jpeg, setJpeg] = useState<Blob | null>(null)
   const [preview, setPreview] = useState<string | null>(null)
   const [up, setUp] = useState<UploadState>({ s: 'idle' })
   const [left, setLeft] = useState(AUTO_RESET_S)
-  // same random quote bubble no matter how often the effect is changed
-  const [seed] = useState(() => Math.floor(Math.random() * 1e9))
   // bumps on every recompose so a late upload of an old version is ignored
   const version = useRef(0)
 

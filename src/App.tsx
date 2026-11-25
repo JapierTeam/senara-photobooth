@@ -16,6 +16,8 @@ export default function App() {
   const [frameId, setFrameId] = useState(FRAMES[0].id)
   const [stage, setStage] = useState<Stage>({ name: 'home' })
   const [effect, setEffect] = useState<EffectId>('original')
+  // one random seed per session so the quote bubble matches between preview and result
+  const [seed, setSeed] = useState(0)
   const frame = FRAMES.find((f) => f.id === frameId) ?? FRAMES[0]
 
   switch (stage.name) {
@@ -27,6 +29,7 @@ export default function App() {
           onStart={() => {
             document.documentElement.requestFullscreen?.().catch(() => undefined)
             setEffect('original')
+            setSeed(Math.floor(Math.random() * 1e9))
             setStage({ name: 'shoot', frame })
           }}
         />
@@ -36,6 +39,7 @@ export default function App() {
         <Shoot
           frame={stage.frame}
           effect={effect}
+          seed={seed}
           onEffect={setEffect}
           onCancel={() => setStage({ name: 'home' })}
           onDone={(photos) => setStage({ name: 'result', frame: stage.frame, photos })}
@@ -47,6 +51,7 @@ export default function App() {
           frame={stage.frame}
           photos={stage.photos}
           effect={effect}
+          seed={seed}
           onEffect={setEffect}
           onRetake={() => setStage({ name: 'shoot', frame: stage.frame })}
           onFinish={() => setStage({ name: 'home' })}

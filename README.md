@@ -18,6 +18,17 @@ Defined as data in `src/frames/*.ts` (`FrameDef`): canvas size, photo slots, sti
 
 Stickers were extracted from `cetakins.pdf` with `design/tools/extract.py` (split the vector pages into transparent PNGs) and `design/tools/finalize.py` (name, rotate letters, add the white die-cut backing). The app uses `public/stickers/*.webp`; full-resolution PNGs are in `design/assets-hires/`.
 
+## Shooting flow
+
+Home (pick frame) -> **Ready** (live camera, pick an effect) -> trigger -> 3-2-1 countdown for every photo, 2 s between shots -> Result.
+
+Triggers in the Ready state:
+- On-screen shutter button
+- Keyboard or presentation clicker: Space, Enter, PageDown/PageUp, arrow keys, `b`, `.` (Esc cancels). Phone camera Bluetooth remotes send Volume Up, which browsers on iOS cannot read.
+- Hand gesture: open palm held for 1 s (MediaPipe Gesture Recognizer, runs on-device). The wasm and model are self-hosted in `public/mediapipe/` and only load after Mulai is tapped. It can be switched off on screen; the choice is kept in localStorage.
+
+The Ready screen returns to Home after 60 s without activity. Effects are applied per pixel to the final photo (`src/lib/effects.ts`) and previewed live with CSS filters.
+
 ## Delivering photos to phones
 
 1. The kiosk POSTs the JPEG to `api/upload.ts`, which stores it with `put()` (OIDC via `BLOB_STORE_ID`, or `BLOB_READ_WRITE_TOKEN`). Blobs expire after 30 days (`ttlDays`).
