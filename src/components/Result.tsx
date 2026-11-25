@@ -26,7 +26,12 @@ export default function Result({ frame, photos, onRetake, onFinish }: Props) {
     let url: string | null = null
     let alive = true
     composeFrame(frame, photos)
-      .then(canvasToJpeg)
+      .then(async (c) => {
+        // keep under the 4.5MB serverless body limit
+        let b = await canvasToJpeg(c, 0.92)
+        if (b.size > 4_000_000) b = await canvasToJpeg(c, 0.8)
+        return b
+      })
       .then((b) => {
         if (!alive) return
         url = URL.createObjectURL(b)
@@ -46,8 +51,8 @@ export default function Result({ frame, photos, onRetake, onFinish }: Props) {
       .catch((e: Error) =>
         setUp({
           s: 'error',
-          msg: /client token/i.test(e.message)
-            ? 'Server belum terhubung ke Vercel Blob (cek BLOB_READ_WRITE_TOKEN).'
+          msg: /token|credentials/i.test(e.message)
+            ? 'Server belum terhubung ke Vercel Blob (cek koneksi Blob store lalu redeploy).'
             : e.message,
         }),
       )

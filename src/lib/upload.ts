@@ -1,6 +1,3 @@
-import { upload } from '@vercel/blob/client'
-import { nanoid } from 'nanoid'
-
 const BLOB_HOST = /^([a-z0-9]+)\.public\.blob\.vercel-storage\.com$/i
 const FILE_RE = /^[A-Za-z0-9_-]+\.jpg$/
 
@@ -10,14 +7,16 @@ export interface UploadResult {
   shareUrl: string
 }
 
-/** Upload a composed photo to Vercel Blob and return the guest download page URL. */
+/** Upload a composed photo to Vercel Blob (via /api/upload) and return the guest download page URL. */
 export async function uploadPhoto(jpeg: Blob): Promise<UploadResult> {
-  const blob = await upload(`photos/senara-${nanoid(10)}.jpg`, jpeg, {
-    access: 'public',
-    contentType: 'image/jpeg',
-    handleUploadUrl: '/api/upload',
+  const res = await fetch('/api/upload', {
+    method: 'POST',
+    headers: { 'content-type': 'image/jpeg' },
+    body: jpeg,
   })
-  return { blobUrl: blob.url, shareUrl: shareUrlFor(blob.url) }
+  const data = (await res.json().catch(() => ({}))) as { url?: string; error?: string }
+  if (!res.ok || !data.url) throw new Error(data.error ?? `Upload gagal (HTTP ${res.status})`)
+  return { blobUrl: data.url, shareUrl: shareUrlFor(data.url) }
 }
 
 /** https://<store>.public.blob.vercel-storage.com/photos/<file> -> <origin>/p/<store>/<file> */

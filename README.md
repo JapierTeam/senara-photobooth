@@ -20,7 +20,7 @@ Stickers were extracted from `cetakins.pdf` with `design/tools/extract.py` (spli
 
 ## Delivering photos to phones
 
-1. The kiosk uploads the JPEG to Vercel Blob through a client token from `api/upload.ts`. Blobs expire after 30 days (`ttlDays`).
+1. The kiosk POSTs the JPEG to `api/upload.ts`, which stores it with `put()` (OIDC via `BLOB_STORE_ID`, or `BLOB_READ_WRITE_TOKEN`). Blobs expire after 30 days (`ttlDays`).
 2. A QR code points to `/p/<store>/<file>.jpg`.
 3. On that page, **Simpan Foto** opens the native share sheet (`navigator.share` with the file). On iOS, "Save Image" saves to Photos; on Android, pick Photos/Gallery. A plain download and a WhatsApp link are fallbacks.
 
@@ -36,5 +36,5 @@ vercel dev         # also runs /api/upload (needs BLOB_READ_WRITE_TOKEN in .env.
 ## Deploy
 
 1. `vercel` (or import the repo in the Vercel dashboard). Framework: Vite.
-2. Dashboard > Storage > Create **Blob** store (public access) and connect it to the project. This adds `BLOB_READ_WRITE_TOKEN`.
+2. Dashboard > Storage > Create **Blob** store (public access) and connect it to the project. This adds `BLOB_STORE_ID` (OIDC).
 3. Redeploy. Open the site on the kiosk, allow the camera, and use Add to Home Screen or full screen.
