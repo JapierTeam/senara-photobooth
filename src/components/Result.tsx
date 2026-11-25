@@ -43,7 +43,14 @@ export default function Result({ frame, photos, onRetake, onFinish }: Props) {
     setUp({ s: 'uploading' })
     uploadPhoto(b)
       .then((r) => setUp({ s: 'done', url: r.shareUrl }))
-      .catch((e: Error) => setUp({ s: 'error', msg: e.message }))
+      .catch((e: Error) =>
+        setUp({
+          s: 'error',
+          msg: /client token/i.test(e.message)
+            ? 'Server belum terhubung ke Vercel Blob (cek BLOB_READ_WRITE_TOKEN).'
+            : e.message,
+        }),
+      )
   }
 
   useEffect(() => {
@@ -97,9 +104,6 @@ export default function Result({ frame, photos, onRetake, onFinish }: Props) {
           {preview && (
             <a className="btn btn-ghost" href={preview} download={filename}>Download</a>
           )}
-          {preview && (
-            <button className="btn btn-ghost" onClick={() => printImage(preview)}>Cetak</button>
-          )}
           <button className="btn btn-ghost" onClick={onRetake}>Ulangi</button>
           <button className="btn btn-primary" onClick={onFinish}>Selesai</button>
         </div>
@@ -109,11 +113,3 @@ export default function Result({ frame, photos, onRetake, onFinish }: Props) {
   )
 }
 
-function printImage(src: string) {
-  const w = window.open('', '_blank')
-  if (!w) return
-  w.document.write(
-    `<html><head><title>Print</title><style>@page{margin:0}html,body{margin:0;height:100%}img{display:block;max-width:100%;max-height:100vh;margin:auto}</style></head><body><img src="${src}" onload="setTimeout(()=>{print();close()},200)"></body></html>`,
-  )
-  w.document.close()
-}
