@@ -5,6 +5,7 @@ import { composeFrame } from '../lib/compose'
 import { EFFECTS, applyEffect, type EffectId } from '../lib/effects'
 import { useHandTrigger } from '../lib/gesture'
 import EffectPicker from './EffectPicker'
+import { DATE_LOCALE, useI18n } from '../lib/i18n'
 
 const COUNTDOWN = 3
 const BETWEEN_SHOTS_MS = 2000
@@ -25,6 +26,7 @@ interface Props {
 }
 
 export default function Shoot({ frame, effect, seed, onEffect, onCancel, onDone }: Props) {
+  const { t, lang } = useI18n()
   const { videoRef, ready, error, capture } = useCamera(true)
   const [phase, setPhase] = useState<'ready' | 'shooting'>('ready')
   const [count, setCount] = useState<number | null>(null)
@@ -108,13 +110,13 @@ export default function Shoot({ frame, effect, seed, onEffect, onCancel, onDone 
       c.getContext('2d')!.drawImage(p, 0, 0, c.width, c.height)
       return applyEffect(c, effect)
     })
-    composeFrame(frame, small, { scale: 420 / frame.h, seed }).then(
+    composeFrame(frame, small, { scale: 420 / frame.h, seed, locale: DATE_LOCALE[lang] }).then(
       (c) => alive && setFramePreview(c.toDataURL('image/jpeg', 0.85)),
     )
     return () => {
       alive = false
     }
-  }, [frame, photos, effect, seed])
+  }, [frame, photos, effect, seed, lang])
 
   const toggleGesture = () => {
     const next = !gestureOn
@@ -129,27 +131,27 @@ export default function Shoot({ frame, effect, seed, onEffect, onCancel, onDone 
     <main className="shoot" onPointerDown={bump}>
       {/* left: how-to */}
       <aside className="shoot-side shoot-guide">
-        <h2>Cara foto</h2>
+        <h2>{t('shoot.howTo')}</h2>
         <ol className="guide-steps">
           <li className={!shooting ? 'is-active' : ''}>
             <span className="guide-num">1</span>
             <div>
-              <b>Pilih efek</b>
-              <small>di bawah layar</small>
+              <b>{t('shoot.step1')}</b>
+              <small>{t('shoot.step1Hint')}</small>
             </div>
           </li>
           <li className={!shooting ? 'is-active' : ''}>
             <span className="guide-num">2</span>
             <div>
-              <b>Angkat 🖐️ 1 detik</b>
-              <small>atau tekan tombol ◉</small>
+              <b>{t('shoot.step2')}</b>
+              <small>{t('shoot.step2Hint')}</small>
             </div>
           </li>
           <li className={shooting ? 'is-active' : ''}>
             <span className="guide-num">3</span>
             <div>
-              <b>Pose {frame.shots}x</b>
-              <small>hitung mundur {COUNTDOWN} detik tiap foto</small>
+              <b>{t('shoot.step3', { n: frame.shots })}</b>
+              <small>{t('shoot.step3Hint', { s: COUNTDOWN })}</small>
             </div>
           </li>
         </ol>
@@ -158,9 +160,9 @@ export default function Shoot({ frame, effect, seed, onEffect, onCancel, onDone 
           <span>🖐️</span>
         </div>
         <button className="gesture-toggle" onClick={toggleGesture} disabled={shooting}>
-          Deteksi tangan: <b>{gestureOn ? 'ON' : 'OFF'}</b>
-          {gestureOn && gestureStatus === 'loading' && <small>memuat…</small>}
-          {gestureOn && gestureStatus === 'error' && <small>tidak didukung di perangkat ini</small>}
+          {t('shoot.gesture')}: <b>{gestureOn ? 'ON' : 'OFF'}</b>
+          {gestureOn && gestureStatus === 'loading' && <small>{t('shoot.gestureLoading')}</small>}
+          {gestureOn && gestureStatus === 'error' && <small>{t('shoot.gestureError')}</small>}
         </button>
       </aside>
 
@@ -175,30 +177,34 @@ export default function Shoot({ frame, effect, seed, onEffect, onCancel, onDone 
             style={{ filter: EFFECTS.find((e) => e.id === effect)?.css }}
           />
           {count !== null && <div className="countdown" key={`${photos.length}-${count}`}>{count}</div>}
-          {between && <div className="between-msg">Siap untuk foto {photos.length + 1}…</div>}
+          {between && <div className="between-msg">{t('shoot.next', { n: photos.length + 1 })}</div>}
           {!shooting && ready && (
             <div className="ready-msg">
-              {progress > 0 ? 'Tahan… 🖐️' : gestureOn && gestureStatus === 'ready' ? 'Angkat 🖐️ atau tekan ◉ untuk mulai' : 'Tekan ◉ untuk mulai'}
+              {progress > 0 ? t('shoot.hold') : gestureOn && gestureStatus === 'ready' ? t('shoot.readyGesture') : t('shoot.readyButton')}
             </div>
           )}
           {flash && <div className="flash" />}
-          {!ready && !error && <div className="overlay-msg"><span className="spinner" /> Menyalakan kamera…</div>}
-          {error && <div className="overlay-msg">{error}</div>}
+          {!ready && !error && <div className="overlay-msg"><span className="spinner" /> {t('shoot.startingCamera')}</div>}
+          {error && (
+            <div className="overlay-msg">
+              {error === 'denied' ? t('shoot.cameraDenied') : error === 'https' ? t('shoot.cameraHttps') : error}
+            </div>
+          )}
         </div>
       </section>
 
       {/* right: frame preview */}
       <aside className="shoot-side shoot-preview">
-        <h2>{frame.name}</h2>
+        <h2>{t(`frame.${frame.id}` as 'frame.strip4')}</h2>
         <div className="mini-frame">{framePreview && <img src={framePreview} alt="" />}</div>
         <p className="shot-count">
-          Foto <b>{Math.min(photos.length + (shooting ? 1 : 0), frame.shots) || 0}</b> / {frame.shots}
+          {t('shoot.photoCount')} <b>{Math.min(photos.length + (shooting ? 1 : 0), frame.shots) || 0}</b> / {frame.shots}
         </p>
       </aside>
 
       {/* bottom bar */}
       <footer className="shoot-bar">
-        <button className="btn btn-ghost" onClick={onCancel}>Batal</button>
+        <button className="btn btn-ghost" onClick={onCancel}>{t('shoot.cancel')}</button>
         <div className={`shoot-effects ${shooting ? 'is-locked' : ''}`}>
           <EffectPicker
             value={effect}
@@ -211,7 +217,7 @@ export default function Shoot({ frame, effect, seed, onEffect, onCancel, onDone 
         </div>
         <button
           className="shutter"
-          aria-label="Ambil foto"
+          aria-label={t('shoot.shutter')}
           onClick={() => {
             bump()
             start()

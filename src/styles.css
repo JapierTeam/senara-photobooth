@@ -249,3 +249,13 @@ h1, h2, p { margin: 0; }
   .result-panel .effects { grid-column: 1 / -1; }
 }
 .result-panel .effects { flex-wrap: wrap; justify-content: center; overflow: visible; }
+
+/* ---------- language toggle ---------- */
+.lang-toggle { display: inline-flex; background: var(--white); border-radius: 999px; padding: 4px; box-shadow: 0 4px 14px rgba(46, 39, 82, 0.15); }
+.lang-toggle button {
+  appearance: none; border: 0; background: transparent; color: var(--purple); font: 800 14px/1 inherit; font-family: inherit;
+  padding: 8px 14px; border-radius: 999px; cursor: pointer; letter-spacing: 1px;
+}
+.lang-toggle button.is-active { background: var(--navy); color: var(--white); }
+.lang-corner { position: absolute; top: max(16px, env(safe-area-inset-top)); right: 16px; z-index: 2; }
+.download { position: relative; }

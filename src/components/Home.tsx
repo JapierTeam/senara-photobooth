@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react'
 import { FRAMES, assetUrl } from '../frames'
 import { composeFrame } from '../lib/compose'
+import { DATE_LOCALE, LangToggle, useI18n } from '../lib/i18n'
 
 interface Props {
   selected: string
@@ -9,21 +10,23 @@ interface Props {
 }
 
 export default function Home({ selected, onSelect, onStart }: Props) {
+  const { t, lang } = useI18n()
   const [thumbs, setThumbs] = useState<Record<string, string>>({})
 
   useEffect(() => {
     let alive = true
     FRAMES.forEach(async (f) => {
-      const c = await composeFrame(f, [], { scale: 360 / Math.max(f.w, f.h), seed: 7 })
+      const c = await composeFrame(f, [], { scale: 360 / Math.max(f.w, f.h), seed: 7, locale: DATE_LOCALE[lang] })
       if (alive) setThumbs((t) => ({ ...t, [f.id]: c.toDataURL('image/png') }))
     })
     return () => {
       alive = false
     }
-  }, [])
+  }, [lang])
 
   return (
     <main className="home">
+      <LangToggle className="lang-corner" />
       <header className="brand">
         <img src={assetUrl('logo-app')} alt="" className="brand-logo" />
         <div>
@@ -32,7 +35,7 @@ export default function Home({ selected, onSelect, onStart }: Props) {
         </div>
       </header>
 
-      <h2 className="home-title">Pilih bingkai</h2>
+      <h2 className="home-title">{t('home.chooseFrame')}</h2>
       <div className="frame-grid">
         {FRAMES.map((f) => (
           <button
@@ -41,14 +44,14 @@ export default function Home({ selected, onSelect, onStart }: Props) {
             onClick={() => onSelect(f.id)}
           >
             <div className="frame-thumb">{thumbs[f.id] ? <img src={thumbs[f.id]} alt="" /> : <span className="spinner" />}</div>
-            <strong>{f.name}</strong>
-            <small>{f.shots} foto</small>
+            <strong>{t(`frame.${f.id}` as 'frame.strip4')}</strong>
+            <small>{f.shots === 1 ? t('home.photo') : t('home.photos', { n: f.shots })}</small>
           </button>
         ))}
       </div>
 
       <button className="btn btn-primary btn-xl" onClick={onStart}>
-        Mulai Foto
+        {t('home.start')}
       </button>
 
       <img src={assetUrl('sparkle-tall')} alt="" className="deco deco-1" />

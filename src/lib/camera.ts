@@ -25,8 +25,8 @@ export function useCamera(active: boolean) {
         await v.play().catch(() => undefined)
         setReady(true)
       })
-      .catch((e: Error) => setError(e.name === 'NotAllowedError' ? 'Izin kamera ditolak.' : e.message))
-    if (!navigator.mediaDevices) setError('Kamera butuh HTTPS.')
+      .catch((e: Error) => setError(e.name === 'NotAllowedError' ? 'denied' : e.message))
+    if (!navigator.mediaDevices) setError('https')
     return () => {
       cancelled = true
       stream?.getTracks().forEach((t) => t.stop())

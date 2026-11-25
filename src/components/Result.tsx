@@ -5,6 +5,7 @@ import { canvasToJpeg, composeFrame } from '../lib/compose'
 import { uploadPhoto } from '../lib/upload'
 import { applyEffect, type EffectId } from '../lib/effects'
 import EffectPicker from './EffectPicker'
+import { DATE_LOCALE, useI18n } from '../lib/i18n'
 
 const AUTO_RESET_S = 120
 
@@ -21,6 +22,7 @@ interface Props {
 }
 
 export default function Result({ frame, photos, effect, seed, onEffect, onRetake, onFinish }: Props) {
+  const { t, lang } = useI18n()
   const [jpeg, setJpeg] = useState<Blob | null>(null)
   const [preview, setPreview] = useState<string | null>(null)
   const [up, setUp] = useState<UploadState>({ s: 'idle' })
@@ -38,7 +40,7 @@ export default function Result({ frame, photos, effect, seed, onEffect, onRetake
     composeFrame(
       frame,
       photos.map((p) => applyEffect(p, effect)),
-      { seed },
+      { seed, locale: DATE_LOCALE[lang] },
     )
       .then(async (c) => {
         // keep under the 4.5MB serverless body limit
@@ -56,7 +58,7 @@ export default function Result({ frame, photos, effect, seed, onEffect, onRetake
       alive = false
       if (url) URL.revokeObjectURL(url)
     }
-  }, [frame, photos, effect, seed])
+  }, [frame, photos, effect, seed, lang])
 
   const doUpload = (b: Blob) => {
     const v = version.current
@@ -67,9 +69,7 @@ export default function Result({ frame, photos, effect, seed, onEffect, onRetake
         v === version.current &&
         setUp({
           s: 'error',
-          msg: /token|credentials/i.test(e.message)
-            ? 'Server belum terhubung ke Vercel Blob (cek koneksi Blob store lalu redeploy).'
-            : e.message,
+          msg: e.message,
         }),
       )
   }
@@ -90,47 +90,48 @@ export default function Result({ frame, photos, effect, seed, onEffect, onRetake
     <main className="result" onPointerDown={() => setLeft(AUTO_RESET_S)}>
       <section className="result-photo">
         {preview ? (
-          <img src={preview} alt="Hasil foto" className={frame.h > frame.w * 2 ? 'is-strip' : ''} />
+          <img src={preview} alt={t('result.alt')} className={frame.h > frame.w * 2 ? 'is-strip' : ''} />
         ) : (
-          <div className="overlay-msg"><span className="spinner" /> Menyusun foto…</div>
+          <div className="overlay-msg"><span className="spinner" /> {t('result.composing')}</div>
         )}
       </section>
 
       <aside className="result-panel">
-        <h2>Pilih efek</h2>
+        <h2>{t('effects.title')}</h2>
         <EffectPicker value={effect} onChange={onEffect} sample={sample} />
         <div className="qr-box">
           {up.s === 'done' ? (
             <QRCodeSVG value={up.url} size={210} level="M" marginSize={2} />
           ) : up.s === 'error' ? (
             <div className="qr-placeholder error">
-              Upload gagal
-              <small>{up.msg}</small>
-              <button className="btn btn-ghost" onClick={() => jpeg && doUpload(jpeg)}>Coba lagi</button>
+              {t('result.uploadFailed')}
+              <small>{/token|credentials/i.test(up.msg) ? t('result.blobNotConnected') : up.msg}</small>
+              <button className="btn btn-ghost" onClick={() => jpeg && doUpload(jpeg)}>{t('result.retry')}</button>
             </div>
           ) : up.s === 'uploading' ? (
-            <div className="qr-placeholder"><span className="spinner" /> Menyiapkan QR…</div>
+            <div className="qr-placeholder"><span className="spinner" /> {t('result.preparingQr')}</div>
           ) : (
             <button className="qr-placeholder qr-cta" disabled={!jpeg} onClick={() => jpeg && doUpload(jpeg)}>
-              {jpeg ? <>Kirim ke HP<small>Tap untuk membuat QR code</small></> : <><span className="spinner" /> Menyusun foto…</>}
+              {jpeg ? <>{t('result.send')}<small>{t('result.sendHint')}</small></> : <><span className="spinner" /> {t('result.composing')}</>}
             </button>
           )}
         </div>
         <ol className="steps">
-          <li>Buka <b>kamera</b> HP (iPhone / Android)</li>
-          <li>Arahkan ke QR code</li>
-          <li>Tap <b>Simpan Foto</b></li>
+          {(['result.step1', 'result.step2', 'result.step3'] as const).map((k) => (
+            // static strings from our own dictionary (only <b> markup)
+            <li key={k} dangerouslySetInnerHTML={{ __html: t(k) }} />
+          ))}
         </ol>
         {up.s === 'done' && <p className="share-url">{up.url.replace(/^https?:\/\//, '')}</p>}
 
         <div className="result-actions">
           {preview && (
-            <a className="btn btn-ghost" href={preview} download={filename}>Download</a>
+            <a className="btn btn-ghost" href={preview} download={filename}>{t('result.download')}</a>
           )}
-          <button className="btn btn-ghost" onClick={onRetake}>Ulangi</button>
-          <button className="btn btn-primary" onClick={onFinish}>Selesai</button>
+          <button className="btn btn-ghost" onClick={onRetake}>{t('result.retake')}</button>
+          <button className="btn btn-primary" onClick={onFinish}>{t('result.done')}</button>
         </div>
-        <p className="auto-reset">Kembali ke awal dalam {left}s</p>
+        <p className="auto-reset">{t('result.autoReset', { n: left })}</p>
       </aside>
     </main>
   )

@@ -29,6 +29,10 @@ Triggers in the Ready state:
 
 The Ready screen returns to Home after 60 s without activity. Effects are applied per pixel to the final photo (`src/lib/effects.ts`) and previewed live with CSS filters.
 
+## Language
+
+English (default) and Bahasa Indonesia, switchable with the EN/ID toggle on the home screen and on the guest download page. The choice is saved in localStorage per device. Strings live in `src/lib/i18n.tsx`; the date printed on the frames follows the selected language.
+
 ## Delivering photos to phones
 
 1. The kiosk POSTs the JPEG to `api/upload.ts`, which stores it with `put()` (OIDC via `BLOB_STORE_ID`, or `BLOB_READ_WRITE_TOKEN`). Blobs expire after 30 days (`ttlDays`).

@@ -79,8 +79,8 @@ async function drawSticker(ctx: CanvasRenderingContext2D, st: Sticker, pick: (li
   ctx.restore()
 }
 
-export function formatDate(d = new Date()) {
-  return d.toLocaleDateString('id-ID', { day: 'numeric', month: 'long', year: 'numeric' })
+export function formatDate(d = new Date(), locale = 'en-GB') {
+  return d.toLocaleDateString(locale, { day: 'numeric', month: 'long', year: 'numeric' })
 }
 
 export interface ComposeOptions {
@@ -88,6 +88,8 @@ export interface ComposeOptions {
   scale?: number
   /** Seed for picking random stickers (quote bubbles), so thumbnail & final match if wanted. */
   seed?: number
+  /** BCP 47 locale for the printed date. */
+  locale?: string
 }
 
 /**
@@ -160,7 +162,7 @@ export async function composeFrame(frame: FrameDef, photos: (PhotoSource | undef
   for (const st of frame.stickers) if ((st.layer ?? 'over') === 'over') await drawSticker(ctx, st, pick)
 
   // texts
-  const date = formatDate()
+  const date = formatDate(new Date(), opts.locale)
   for (const t of frame.texts) {
     ctx.save()
     ctx.fillStyle = t.color

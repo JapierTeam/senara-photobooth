@@ -1,11 +1,13 @@
 import { useEffect, useState } from 'react'
 import { assetUrl } from '../frames'
 import { blobUrlFromPath } from '../lib/upload'
+import { LangToggle, useI18n } from '../lib/i18n'
 
 const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent) || (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1)
 
 /** Page guests land on after scanning the QR code: /p/<store>/<file>.jpg */
 export default function DownloadPage() {
+  const { t } = useI18n()
   const blobUrl = blobUrlFromPath(location.pathname)
   const [file, setFile] = useState<File | null>(null)
   const [state, setState] = useState<'loading' | 'ready' | 'missing'>('loading')
@@ -56,6 +58,7 @@ export default function DownloadPage() {
 
   return (
     <main className="download">
+      <LangToggle className="lang-corner" />
       <header className="brand brand-sm">
         <img src={assetUrl('logo-app')} alt="" className="brand-logo" />
         <div>
@@ -66,35 +69,33 @@ export default function DownloadPage() {
 
       {state === 'missing' && (
         <div className="dl-card">
-          <p>Foto tidak ditemukan atau sudah kedaluwarsa.</p>
+          <p>{t('dl.missing')}</p>
         </div>
       )}
 
       {state !== 'missing' && (
         <>
           <div className="dl-photo">
-            {blobUrl && <img src={blobUrl} alt="Foto SENARA Photobooth" />}
+            {blobUrl && <img src={blobUrl} alt={t('dl.alt')} />}
           </div>
           <div className="dl-actions">
             <button className="btn btn-primary btn-xl" onClick={save} disabled={state !== 'ready'}>
-              {state === 'loading' ? 'Memuat…' : 'Simpan Foto'}
+              {state === 'loading' ? t('dl.loading') : t('dl.save')}
             </button>
             {canShareFile && (
-              <button className="btn btn-ghost" onClick={download}>Download file</button>
+              <button className="btn btn-ghost" onClick={download}>{t('dl.downloadFile')}</button>
             )}
             <a
               className="btn btn-ghost"
-              href={`https://wa.me/?text=${encodeURIComponent(`Foto aku di SENARA Photobooth 📸 ${location.href}`)}`}
+              href={`https://wa.me/?text=${encodeURIComponent(`${t('dl.whatsappText')} ${location.href}`)}`}
             >
-              Kirim via WhatsApp
+              {t('dl.whatsapp')}
             </a>
           </div>
           <p className="dl-hint">
-            {isIOS
-              ? 'iPhone: tap "Simpan Foto" lalu pilih "Save Image". Atau tekan lama foto → "Save to Photos".'
-              : 'Android: tap "Simpan Foto" lalu pilih Galeri/Photos, atau "Download file" (tersimpan di folder Download).'}
+            {isIOS ? t('dl.hintIos') : t('dl.hintAndroid')}
           </p>
-          {saved && <p className="dl-saved">Tersimpan! Terima kasih sudah mampir ✨</p>}
+          {saved && <p className="dl-saved">{t('dl.saved')}</p>}
         </>
       )}
     </main>

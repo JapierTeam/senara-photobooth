@@ -15,7 +15,7 @@ export async function uploadPhoto(jpeg: Blob): Promise<UploadResult> {
     body: jpeg,
   })
   const data = (await res.json().catch(() => ({}))) as { url?: string; error?: string }
-  if (!res.ok || !data.url) throw new Error(data.error ?? `Upload gagal (HTTP ${res.status})`)
+  if (!res.ok || !data.url) throw new Error(data.error ?? `HTTP ${res.status}`)
   return { blobUrl: data.url, shareUrl: shareUrlFor(data.url) }
 }
 

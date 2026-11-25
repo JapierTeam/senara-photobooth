@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react'
 import { EFFECTS, applyEffect, type EffectId } from '../lib/effects'
+import { useI18n } from '../lib/i18n'
 
 interface Props {
   value: EffectId
@@ -10,6 +11,7 @@ interface Props {
 }
 
 export default function EffectPicker({ value, onChange, sample, dark }: Props) {
+  const { t } = useI18n()
   const [thumbs, setThumbs] = useState<Partial<Record<EffectId, string>>>({})
 
   useEffect(() => {
@@ -25,7 +27,7 @@ export default function EffectPicker({ value, onChange, sample, dark }: Props) {
   }, [sample])
 
   return (
-    <div className={`effects ${dark ? 'effects-dark' : ''}`} role="radiogroup" aria-label="Efek foto">
+    <div className={`effects ${dark ? 'effects-dark' : ''}`} role="radiogroup" aria-label={t('effects.label')}>
       {EFFECTS.map((e) => (
         <button
           key={e.id}
