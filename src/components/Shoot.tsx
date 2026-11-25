@@ -1,17 +1,21 @@
 import { useEffect, useRef, useState } from 'react'
 import type { FrameDef } from '../frames'
 import { useCamera } from '../lib/camera'
+import { EFFECTS, type EffectId } from '../lib/effects'
+import EffectPicker from './EffectPicker'
 
 const COUNTDOWN = 3
 const wait = (ms: number) => new Promise((r) => setTimeout(r, ms))
 
 interface Props {
   frame: FrameDef
+  effect: EffectId
+  onEffect: (id: EffectId) => void
   onCancel: () => void
   onDone: (photos: HTMLCanvasElement[]) => void
 }
 
-export default function Shoot({ frame, onCancel, onDone }: Props) {
+export default function Shoot({ frame, effect, onEffect, onCancel, onDone }: Props) {
   const { videoRef, ready, error, capture } = useCamera(true)
   const [count, setCount] = useState<number | null>(null)
   const [flash, setFlash] = useState(false)
@@ -52,12 +56,20 @@ export default function Shoot({ frame, onCancel, onDone }: Props) {
   return (
     <main className="shoot">
       <div className="viewfinder" style={{ aspectRatio: `${slot.w} / ${slot.h}` }}>
-        <video ref={videoRef} playsInline muted className="video" />
+        <video
+          ref={videoRef}
+          playsInline
+          muted
+          className="video"
+          style={{ filter: EFFECTS.find((e) => e.id === effect)?.css }}
+        />
         {count !== null && <div className="countdown" key={count}>{count}</div>}
         {flash && <div className="flash" />}
         {!ready && !error && <div className="overlay-msg"><span className="spinner" /> Menyalakan kamera…</div>}
         {error && <div className="overlay-msg">{error}</div>}
       </div>
+
+      <EffectPicker value={effect} onChange={onEffect} dark />
 
       <div className="shoot-bar">
         <button className="btn btn-ghost" onClick={onCancel}>Batal</button>

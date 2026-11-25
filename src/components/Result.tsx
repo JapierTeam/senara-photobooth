@@ -1,8 +1,10 @@
-import { useEffect, useState } from 'react'
+import { useEffect, useMemo, useRef, useState } from 'react'
 import { QRCodeSVG } from 'qrcode.react'
 import type { FrameDef } from '../frames'
 import { canvasToJpeg, composeFrame } from '../lib/compose'
 import { uploadPhoto } from '../lib/upload'
+import { applyEffect, type EffectId } from '../lib/effects'
+import EffectPicker from './EffectPicker'
 
 const AUTO_RESET_S = 120
 
@@ -11,21 +13,34 @@ type UploadState = { s: 'idle' } | { s: 'uploading' } | { s: 'done'; url: string
 interface Props {
   frame: FrameDef
   photos: HTMLCanvasElement[]
+  effect: EffectId
+  onEffect: (id: EffectId) => void
   onRetake: () => void
   onFinish: () => void
 }
 
-export default function Result({ frame, photos, onRetake, onFinish }: Props) {
+export default function Result({ frame, photos, effect, onEffect, onRetake, onFinish }: Props) {
   const [jpeg, setJpeg] = useState<Blob | null>(null)
   const [preview, setPreview] = useState<string | null>(null)
   const [up, setUp] = useState<UploadState>({ s: 'idle' })
   const [left, setLeft] = useState(AUTO_RESET_S)
+  // same random quote bubble no matter how often the effect is changed
+  const [seed] = useState(() => Math.floor(Math.random() * 1e9))
+  // bumps on every recompose so a late upload of an old version is ignored
+  const version = useRef(0)
 
-  // compose once
+  // recompose whenever the effect changes; the QR is only made when the guest asks for it
   useEffect(() => {
     let url: string | null = null
     let alive = true
-    composeFrame(frame, photos)
+    version.current++
+    setJpeg(null)
+    setUp({ s: 'idle' })
+    composeFrame(
+      frame,
+      photos.map((p) => applyEffect(p, effect)),
+      { seed },
+    )
       .then(async (c) => {
         // keep under the 4.5MB serverless body limit
         let b = await canvasToJpeg(c, 0.92)
@@ -42,13 +57,15 @@ export default function Result({ frame, photos, onRetake, onFinish }: Props) {
       alive = false
       if (url) URL.revokeObjectURL(url)
     }
-  }, [frame, photos])
+  }, [frame, photos, effect, seed])
 
   const doUpload = (b: Blob) => {
+    const v = version.current
     setUp({ s: 'uploading' })
     uploadPhoto(b)
-      .then((r) => setUp({ s: 'done', url: r.shareUrl }))
+      .then((r) => v === version.current && setUp({ s: 'done', url: r.shareUrl }))
       .catch((e: Error) =>
+        v === version.current &&
         setUp({
           s: 'error',
           msg: /token|credentials/i.test(e.message)
@@ -57,10 +74,6 @@ export default function Result({ frame, photos, onRetake, onFinish }: Props) {
         }),
       )
   }
-
-  useEffect(() => {
-    if (jpeg) doUpload(jpeg)
-  }, [jpeg])
 
   // auto reset so the booth is ready for the next guest
   useEffect(() => {
@@ -72,6 +85,7 @@ export default function Result({ frame, photos, onRetake, onFinish }: Props) {
   }, [left, onFinish])
 
   const filename = `senara-${Date.now()}.jpg`
+  const sample = useMemo(() => photos[0], [photos])
 
   return (
     <main className="result" onPointerDown={() => setLeft(AUTO_RESET_S)}>
@@ -84,18 +98,23 @@ export default function Result({ frame, photos, onRetake, onFinish }: Props) {
       </section>
 
       <aside className="result-panel">
-        <h2>Ambil fotomu!</h2>
+        <h2>Pilih efek</h2>
+        <EffectPicker value={effect} onChange={onEffect} sample={sample} />
         <div className="qr-box">
           {up.s === 'done' ? (
-            <QRCodeSVG value={up.url} size={260} level="M" marginSize={2} />
+            <QRCodeSVG value={up.url} size={210} level="M" marginSize={2} />
           ) : up.s === 'error' ? (
             <div className="qr-placeholder error">
               Upload gagal
               <small>{up.msg}</small>
               <button className="btn btn-ghost" onClick={() => jpeg && doUpload(jpeg)}>Coba lagi</button>
             </div>
-          ) : (
+          ) : up.s === 'uploading' ? (
             <div className="qr-placeholder"><span className="spinner" /> Menyiapkan QR…</div>
+          ) : (
+            <button className="qr-placeholder qr-cta" disabled={!jpeg} onClick={() => jpeg && doUpload(jpeg)}>
+              {jpeg ? <>Kirim ke HP<small>Tap untuk membuat QR code</small></> : <><span className="spinner" /> Menyusun foto…</>}
+            </button>
           )}
         </div>
         <ol className="steps">

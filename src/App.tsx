@@ -4,6 +4,7 @@ import Home from './components/Home'
 import Shoot from './components/Shoot'
 import Result from './components/Result'
 import { useWakeLock } from './lib/camera'
+import type { EffectId } from './lib/effects'
 
 type Stage =
   | { name: 'home' }
@@ -14,6 +15,7 @@ export default function App() {
   useWakeLock()
   const [frameId, setFrameId] = useState(FRAMES[0].id)
   const [stage, setStage] = useState<Stage>({ name: 'home' })
+  const [effect, setEffect] = useState<EffectId>('original')
   const frame = FRAMES.find((f) => f.id === frameId) ?? FRAMES[0]
 
   switch (stage.name) {
@@ -24,6 +26,7 @@ export default function App() {
           onSelect={setFrameId}
           onStart={() => {
             document.documentElement.requestFullscreen?.().catch(() => undefined)
+            setEffect('original')
             setStage({ name: 'shoot', frame })
           }}
         />
@@ -32,6 +35,8 @@ export default function App() {
       return (
         <Shoot
           frame={stage.frame}
+          effect={effect}
+          onEffect={setEffect}
           onCancel={() => setStage({ name: 'home' })}
           onDone={(photos) => setStage({ name: 'result', frame: stage.frame, photos })}
         />
@@ -41,6 +46,8 @@ export default function App() {
         <Result
           frame={stage.frame}
           photos={stage.photos}
+          effect={effect}
+          onEffect={setEffect}
           onRetake={() => setStage({ name: 'shoot', frame: stage.frame })}
           onFinish={() => setStage({ name: 'home' })}
         />
